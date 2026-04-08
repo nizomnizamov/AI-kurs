@@ -1,0 +1,157 @@
+// ===========================================
+// AI Course LMS — Prisma Database Schema
+// ===========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User Model ─────────────────────────────
+enum Role {
+  STUDENT
+  ADMIN
+  INSTRUCTOR
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  avatar        String?
+  role          Role     @default(STUDENT)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sessions    Session[]
+  enrollments Enrollment[]
+  progress    UserProgress[]
+
+  @@map("users")
+}
+
+// ─── Session / Device Management ────────────
+model Session {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  deviceId        String   @map("device_id")
+  deviceName      String?  @map("device_name")
+  ipAddress       String?  @map("ip_address")
+  refreshToken    String?  @map("refresh_token")
+  lastActive      DateTime @default(now()) @map("last_active")
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+// ─── Course Model ───────────────────────────
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  thumbnail   String?
+  price       Float    @default(0)
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  modules     Module[]
+  enrollments Enrollment[]
+
+  @@map("courses")
+}
+
+// ─── Module Model ───────────────────────────
+model Module {
+  id         String   @id @default(uuid())
+  courseId   String   @map("course_id")
+  title      String
+  orderIndex Int      @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@unique([courseId, orderIndex])
+  @@index([courseId])
+  @@map("modules")
+}
+
+// ─── Lesson Model ───────────────────────────
+model Lesson {
+  id          String   @id @default(uuid())
+  moduleId    String   @map("module_id")
+  title       String
+  description String?
+  videoUrl    String?  @map("video_url")
+  duration    Int?     // seconds
+  orderIndex  Int      @map("order_index")
+  isFree      Boolean  @default(false) @map("is_free")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  module   Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress UserProgress[]
+
+  @@unique([moduleId, orderIndex])
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+// ─── Enrollment Model ───────────────────────
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  courseId    String   @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+// ─── User Progress Model ────────────────────
+enum LessonStatus {
+  LOCKED
+  AVAILABLE
+  COMPLETED
+}
+
+model UserProgress {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  lessonId      String       @map("lesson_id")
+  status        LessonStatus @default(LOCKED)
+  watchPercent  Float        @default(0) @map("watch_percent")
+  completedAt   DateTime?    @map("completed_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@index([userId, status]) // Tez progress query uchun
+  @@map("user_progress")
+}
