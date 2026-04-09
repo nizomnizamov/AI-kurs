@@ -114,6 +114,7 @@ export class AdminService {
         lastName: true,
         role: true,
         isActive: true,
+        isApproved: true,
         createdAt: true,
         _count: { select: { enrollments: true, sessions: true } },
       },
@@ -128,6 +129,16 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id: userId },
       data: { isActive: !user.isActive },
+    });
+  }
+
+  async approveUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isApproved: true },
     });
   }
 

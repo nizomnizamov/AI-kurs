@@ -39,6 +39,11 @@ export class AdminController {
     return this.adminService.toggleUserActive(id);
   }
 
+  @Put('users/:id/approve')
+  async approveUser(@Param('id') id: string) {
+    return this.adminService.approveUser(id);
+  }
+
   // ─── Courses ──────────────────────────
   @Post('courses')
   async createCourse(@Body() data: any) {

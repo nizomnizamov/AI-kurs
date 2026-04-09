@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Zap } from 'lucide-react';
 
 export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
@@ -20,21 +20,23 @@ export default function RegisterPage() {
     setError('');
 
     if (password.length < 6) {
-      setError('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
       return;
     }
 
     setLoading(true);
 
     try {
-      await register({ firstName, lastName, email, password });
+      await register({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), password });
       router.push('/login?registered=true');
     } catch (err: any) {
-      setError(err.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+      setError(err.message || "Ro'yxatdan o'tishda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
   };
+
+  const isFormValid = firstName.trim() && lastName.trim() && email.trim() && password.length >= 6;
 
   return (
     <div style={{
@@ -43,89 +45,110 @@ export default function RegisterPage() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
-      background: '#111827' // Dark background as seen behind the modal
+      background: '#111827',
     }}>
-      <div className="animate-fade-in" style={{
+      <div className="animate-fade-in-scale" style={{
         background: '#ffffff',
         width: '100%',
-        maxWidth: 500,
+        maxWidth: 480,
         padding: '48px 40px',
-        borderRadius: 12,
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+        borderRadius: 16,
+        boxShadow: 'var(--shadow-xl)',
       }}>
-        
+        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#000000', marginBottom: 12, lineHeight: 1.3 }}>
-            👨‍💻 Kursni sotib olish uchun<br/>ro'yxatdan o'ting ))
+          <div style={{
+            width: 48, height: 48, background: '#000', borderRadius: 14,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 20,
+          }}>
+            <Zap className="w-6 h-6" style={{ color: '#fff' }} />
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#000000', marginBottom: 8, lineHeight: 1.3 }}>
+            Ro'yxatdan o'tish
           </h1>
-          <p style={{ color: '#4b5563', fontSize: 15 }}>
-            Ishlayotgan elektron pochta va parolingizni kiriting.
+          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+            Kursga a'zo bo'lish uchun ma'lumotlaringizni kiriting
           </p>
         </div>
 
+        {/* Error */}
         {error && (
-          <div style={{
-            background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px',
-            borderRadius: 8, marginBottom: 24, display: 'flex', alignItems: 'flex-start',
-            gap: 8, color: '#b91c1c', fontSize: 14
-          }}>
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="alert alert-error" style={{ marginBottom: 20 }}>
+            <AlertCircle className="w-5 h-5" style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          
-          <div style={{ display: 'flex', gap: 16 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label className="form-label">Ism</label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                placeholder="Ismingiz"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label className="form-label">Familiya</label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                placeholder="Familiyangiz"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label">Email</label>
             <input
-              type="text"
+              type="email"
               required
               className="form-input"
-              placeholder="Ismingizni kiriting"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-            <input
-              type="text"
-              required
-              className="form-input"
-              placeholder="Familiyangiz"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <input
-            type="email"
-            required
-            className="form-input"
-            placeholder="Elektron pochtangizni kiriting"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            required
-            minLength={6}
-            className="form-input"
-            placeholder="Parol kiriting (min. 6 ta belgi)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+            <label className="form-label">Parol</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="form-input"
+              placeholder="Kamida 6 ta belgi"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {password.length > 0 && password.length < 6 && (
+              <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>
+                Parol kamida 6 ta belgi bo'lishi kerak
+              </p>
+            )}
+          </div>
 
           <button
             type="submit"
-            disabled={loading || !email || !password || !firstName || !lastName}
+            disabled={loading || !isFormValid}
             className="btn-primary"
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 8, padding: '16px' }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "RO'YXATDAN O'TISH"}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "RO'YXATDAN O'TISH"}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: 32, fontSize: 15, color: '#000000' }}>
-          Avval kursni sotib olganmisiz? Unda <Link href="/login" className="blue-link">bu yerdan tizimga kiring!</Link>
+        <div style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: 'var(--text-secondary)' }}>
+          Allaqachon hisobingiz bormi?{' '}
+          <Link href="/login" className="blue-link">Tizimga kiring</Link>
         </div>
       </div>
     </div>

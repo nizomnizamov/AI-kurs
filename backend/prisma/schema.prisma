@@ -7,8 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ─── User Model ─────────────────────────────
@@ -27,6 +27,7 @@ model User {
   avatar        String?
   role          Role     @default(STUDENT)
   isActive      Boolean  @default(true) @map("is_active")
+  isApproved    Boolean  @default(false) @map("is_approved")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

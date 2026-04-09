@@ -30,7 +30,7 @@ export default function SettingsPage() {
     if (!token) return;
     try {
       // Endpoint is DELETE /auth/sessions/:deviceId
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/sessions/${deviceId}`, {
+      await fetch(`/api/auth/sessions/${deviceId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

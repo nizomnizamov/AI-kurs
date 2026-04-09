@@ -10,11 +10,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super({
       // Connection pool — har bir connection uchun 50-60 userni qo'llab-quvvatlash
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
+      // Removing hardcoded datasource override to respect schema.prisma
+
       log: [
         { emit: 'event', level: 'error' },
         { emit: 'event', level: 'warn' },

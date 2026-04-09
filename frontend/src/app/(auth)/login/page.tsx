@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Zap, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +12,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get('registered') === 'true';
+  const sessionExpired = searchParams.get('expired') === 'true';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,10 +22,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Krishda xatolik yuz berdi');
+      setError(err.message || 'Kirishda xatolik yuz berdi');
     } finally {
       setLoading(false);
     }
@@ -35,69 +38,99 @@ export default function LoginPage() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
-      background: '#111827' // Dark background layout
+      background: '#111827',
     }}>
-      <div className="animate-fade-in" style={{
+      <div className="animate-fade-in-scale" style={{
         background: '#ffffff',
         width: '100%',
-        maxWidth: 500,
+        maxWidth: 480,
         padding: '48px 40px',
-        borderRadius: 12,
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+        borderRadius: 16,
+        boxShadow: 'var(--shadow-xl)',
       }}>
-        
+        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#000000', marginBottom: 12, lineHeight: 1.3 }}>
-            👋 Tizimga kirish
+          <div style={{
+            width: 48, height: 48, background: '#000', borderRadius: 14,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 20,
+          }}>
+            <Zap className="w-6 h-6" style={{ color: '#fff' }} />
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#000000', marginBottom: 8, lineHeight: 1.3 }}>
+            Tizimga kirish
           </h1>
-          <p style={{ color: '#4b5563', fontSize: 15 }}>
-            Elektron pochta va parolingizni kiriting.
+          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+            Elektron pochta va parolingizni kiriting
           </p>
         </div>
 
+        {/* Success message after registration */}
+        {justRegistered && (
+          <div className="alert alert-success" style={{ marginBottom: 20 }}>
+            <CheckCircle2 className="w-5 h-5" style={{ flexShrink: 0 }} />
+            <span>Muvaffaqiyatli ro'yxatdan o'tdingiz! Admin tasdiqlashini kuting, so'ng tizimga kiring.</span>
+          </div>
+        )}
+
+        {/* Session expired warning */}
+        {sessionExpired && (
+          <div className="alert alert-warning" style={{ marginBottom: 20 }}>
+            <AlertCircle className="w-5 h-5" style={{ flexShrink: 0 }} />
+            <span>Sessiya muddati tugadi. Iltimos, qaytadan kiring.</span>
+          </div>
+        )}
+
+        {/* Error */}
         {error && (
-          <div style={{
-            background: '#fef2f2', border: '1px solid #fecaca', padding: '12px 16px',
-            borderRadius: 8, marginBottom: 24, display: 'flex', alignItems: 'flex-start',
-            gap: 8, color: '#b91c1c', fontSize: 14
-          }}>
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="alert alert-error" style={{ marginBottom: 20 }}>
+            <AlertCircle className="w-5 h-5" style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          
-          <input
-            type="email"
-            required
-            className="form-input"
-            placeholder="Elektron pochtangizni kiriting"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              required
+              className="form-input"
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-          <input
-            type="password"
-            required
-            className="form-input"
-            placeholder="Parolingizni kiriting"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+            <label className="form-label">Parol</label>
+            <input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              required
+              className="form-input"
+              placeholder="Parolingizni kiriting"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
           <button
             type="submit"
             disabled={loading || !email || !password}
             className="btn-primary"
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 8, padding: '16px' }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "TIZIMGA KIRISH"}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "TIZIMGA KIRISH"}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: 32, fontSize: 15, color: '#000000' }}>
-          Hali hisobingiz yo'qmi? Unda <Link href="/register" className="blue-link">bu yerdan ro'yxatdan o'ting!</Link>
+        <div style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: 'var(--text-secondary)' }}>
+          Hali hisobingiz yo'qmi?{' '}
+          <Link href="/register" className="blue-link">Ro'yxatdan o'ting</Link>
         </div>
       </div>
     </div>

@@ -159,8 +159,7 @@ export class CoursesService {
 
       if (progressData.length > 0) {
         await tx.userProgress.createMany({
-          data: progressData,
-          skipDuplicates: true, // Agar allaqachon mavjud bo'lsa, xato bermasin
+          data: progressData
         });
       }
 

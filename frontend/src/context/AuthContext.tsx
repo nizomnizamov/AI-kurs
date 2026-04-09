@@ -1,24 +1,16 @@
 'use client';
-// ─── Auth Context ───────────────────────────
+// ─── Auth Context (Production-Ready) ────────
+// Auto token refresh, proper typing, event-based sync
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { authApi, ApiError } from '@/lib/api';
+import { authApi, User, ApiError } from '@/lib/api';
 import { v4 as uuidv4 } from 'uuid';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  avatar?: string;
-}
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<void>;
+  register: (data: { email: string; password: string; firstName: string; lastName: string }) => Promise<{ message: string }>;
   logout: () => Promise<void>;
 }
 
@@ -35,6 +27,17 @@ function getDeviceId(): string {
   return deviceId;
 }
 
+// Device name — brauzer nomi
+function getDeviceName(): string {
+  if (typeof window === 'undefined') return 'Unknown';
+  const ua = navigator.userAgent;
+  if (/Mobile|Android|iPhone|iPad/.test(ua)) return 'Mobile Browser';
+  if (/Chrome/.test(ua)) return 'Chrome Desktop';
+  if (/Firefox/.test(ua)) return 'Firefox Desktop';
+  if (/Safari/.test(ua)) return 'Safari Desktop';
+  return 'Desktop Browser';
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -42,18 +45,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize from localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem('lms_token');
-    const savedUser = localStorage.getItem('lms_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedToken = localStorage.getItem('lms_token');
+      const savedUser = localStorage.getItem('lms_user');
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+    } catch {
+      // Corrupted data — clear it
+      localStorage.removeItem('lms_token');
+      localStorage.removeItem('lms_user');
+      localStorage.removeItem('lms_refresh_token');
     }
     setIsLoading(false);
   }, []);
 
+  // Listen for token refresh events from API client
+  useEffect(() => {
+    const handleTokenRefresh = (e: CustomEvent<{ token: string }>) => {
+      setToken(e.detail.token);
+    };
+
+    const handleAuthExpired = () => {
+      setToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener('token-refreshed', handleTokenRefresh as EventListener);
+    window.addEventListener('auth-expired', handleAuthExpired);
+
+    return () => {
+      window.removeEventListener('token-refreshed', handleTokenRefresh as EventListener);
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
+  }, []);
+
   const login = useCallback(async (email: string, password: string) => {
     const deviceId = getDeviceId();
-    const res = await authApi.login({ email, password, deviceId });
+    const deviceName = getDeviceName();
+    const res = await authApi.login({ email, password, deviceId, deviceName });
     setToken(res.accessToken);
     setUser(res.user);
     localStorage.setItem('lms_token', res.accessToken);
@@ -62,13 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (data: { email: string; password: string; firstName: string; lastName: string }) => {
-    await authApi.register(data);
+    const result = await authApi.register(data);
+    return result;
   }, []);
 
   const logout = useCallback(async () => {
     try {
       if (token) await authApi.logout(token);
-    } catch { /* ignore */ }
+    } catch {
+      // Server error bo'lsa ham local state tozalanadi
+    }
     setToken(null);
     setUser(null);
     localStorage.removeItem('lms_token');

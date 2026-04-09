@@ -19,6 +19,8 @@ async function main() {
       firstName: 'Admin',
       lastName: 'Nizamov',
       role: Role.ADMIN,
+      isApproved: true,
+      isActive: true,
     },
   });
   console.log(`✅ Admin user: ${admin.email}`);
@@ -34,6 +36,8 @@ async function main() {
       firstName: 'Talaba',
       lastName: 'Testov',
       role: Role.STUDENT,
+      isApproved: true,
+      isActive: true,
     },
   });
   console.log(`✅ Student user: ${student.email}`);

@@ -91,6 +91,10 @@ export class AuthService {
       throw new UnauthorizedException('Akkaunt bloklangan');
     }
 
+    if (!user.isApproved && user.role !== 'ADMIN') {
+      throw new UnauthorizedException('Hisobingiz hali admin tomonidan tasdiqlanmagan. Iltimos kuting.');
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
